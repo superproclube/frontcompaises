@@ -23,7 +23,7 @@
             
             if (!authToken) {
                 debugLog('Token não encontrado - redirecionando para login');
-                window.location.replace('http://localhost:3001/index2.html');
+                window.location.replace('https://superproclube.com.br/index2.html');
                 return;
             }
 
@@ -53,7 +53,7 @@
                 if (!data.valid) {
                     debugLog('Token inválido - redirecionando para login');
                     sessionStorage.removeItem('authToken');
-                    window.location.replace('http://localhost:3001/index2.html');
+                    window.location.replace('https://superproclube.com.br/index2.html');
                 } else {
                     debugLog('Token válido - acesso permitido');
                     debugLog('URL atual:', window.location.href);
@@ -62,7 +62,7 @@
             } catch (error) {
                 debugLog('Erro na verificação:', error);
                 sessionStorage.removeItem('authToken');
-                window.location.replace('http://localhost:3001/index2.html');
+                window.location.replace('https://superproclube.com.br/index2.html');
             }
         }
 
@@ -81,7 +81,7 @@
                     sessionStorage.removeItem("authToken");
                     debugLog('Token removido');
                     // Redirecionar para a página de login
-                    window.location.replace("http://localhost:3001/index2.html");
+                    window.location.replace("https://superproclube.com.br/index2.html");
                 });
             }
 
@@ -115,7 +115,7 @@
                 console.log('Carregando previsões para:', selectedDate);
                 const authToken = sessionStorage.getItem('authToken');
 
-                const url = `http://localhost:3001/api/predictions/${selectedDate}`;
+                const url = `https://superproclube.com.br/api/sports?dateFrom=${selectedDate}&dateTo=${selectedDate}`;
                 console.log('URL da requisição:', url);
 
                 const response = await fetch(url, {
@@ -618,7 +618,7 @@
 
                 console.log('Carregando previsões para:', selectedDate);
 
-                const url = `http://localhost:3001/api/predictions/${selectedDate}`;
+                const url = `https://superproclube.com.br/api/sports?dateFrom=${selectedDate}&dateTo=${selectedDate}`;
                 console.log('URL da requisição:', url);
 
                 const response = await fetch(url, {
