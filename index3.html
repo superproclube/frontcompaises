@@ -29,7 +29,7 @@
         
         if (!authToken) {
           debugLog('Token não encontrado - redirecionando para login');
-          window.location.replace('http://localhost:3001/index2.html');
+          window.location.replace('https://superproclube.com.br/index2.html');
           return;
         }
 
@@ -59,7 +59,7 @@
           if (!data.valid) {
             debugLog('Token inválido - redirecionando para login');
             sessionStorage.removeItem('authToken');
-            window.location.replace('http://localhost:3001/index2.html');
+            window.location.replace('https://superproclube.com.br/index2.html');
           } else {
             debugLog('Token válido - acesso permitido');
             debugLog('URL atual:', window.location.href);
@@ -68,7 +68,7 @@
         } catch (error) {
           debugLog('Erro na verificação:', error);
           sessionStorage.removeItem('authToken');
-          window.location.replace('http://localhost:3001/index2.html');
+          window.location.replace('https://superproclube.com.br/index2.html');
         }
       }
 
