@@ -37,7 +37,7 @@
           // Verifica se o token é válido
           debugLog('Verificando token com a API...');
           debugLog('Token sendo enviado:', authToken);
-          const response = await fetch('https://api.superproclube.com.br/api/validateUser', {
+          const response = await fetch('https://superproclube.com.br/api/validateUser', {
             method: 'GET',
             credentials: 'include',
             headers: {
@@ -488,7 +488,7 @@
     <!-- JavaScript -->
     <script>
       // Utilizamos o servidor proxy para buscar as dicas
-      const BASE_URL = "https://api.superproclube.com.br";
+      const BASE_URL = "https://superproclube.com.br";
       
       // Função para obter a data atual no formato "YYYY-MM-DD"
       function getCurrentDate() {
