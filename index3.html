@@ -37,7 +37,7 @@
           // Verifica se o token é válido
           debugLog('Verificando token com a API...');
           debugLog('Token sendo enviado:', authToken);
-          const response = await fetch('https://superproclube.com.br/api/validateUser', {
+          const response = await fetch('https://api.superproclube.com.br/api/validateUser', {
             method: 'GET',
             credentials: 'include',
             headers: {
