@@ -392,5 +392,70 @@
       overlay.addEventListener('click', fecharSidebar);
     }
   </script>
+
+  <!-- Função para verificar autenticação -->
+  <script>
+    async function checkAuth() {
+      // Verifica se há um token de autenticação
+      const authToken = sessionStorage.getItem('authToken');
+      console.log('Token encontrado:', authToken ? 'Sim' : 'Não');
+      console.log('URL atual:', window.location.href);
+      
+      if (!authToken) {
+        console.log('Token não encontrado - redirecionando para login');
+        window.location.replace('https://superproclube.com.br/index2.html');
+        return;
+      }
+
+      try {
+        // Verifica se o token é válido
+        console.log('Verificando token com a API...');
+        console.log('Token sendo enviado:', authToken);
+        const response = await fetch('https://superproclube.com.br/api/validateUser', {
+          method: 'GET',
+          credentials: 'include',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+
+        console.log('Resposta da API:', response.status);
+        console.log('Headers da resposta:', Object.fromEntries(response.headers.entries()));
+        
+        if (!response.ok) {
+          console.log('Erro na resposta:', response.statusText);
+          throw new Error('Token inválido');
+        }
+
+        const data = await response.json();
+        console.log('Dados da validação:', data);
+
+        if (!data.valid) {
+          console.log('Token inválido - redirecionando para login');
+          sessionStorage.removeItem('authToken');
+          window.location.replace('https://superproclube.com.br/index2.html');
+        } else {
+          console.log('Token válido - acesso permitido');
+          console.log('URL atual:', window.location.href);
+          console.log('Permanece na página jogos.html');
+        }
+      } catch (error) {
+        console.log('Erro na verificação:', error);
+        sessionStorage.removeItem('authToken');
+        window.location.replace('https://superproclube.com.br/index2.html');
+      }
+    }
+
+    // Evento para o botão "Sair" que desloga o usuário
+    document.getElementById("logout-btn").addEventListener("click", function (event) {
+      event.preventDefault();
+      console.log('Logout iniciado');
+      // Limpar token de autenticação
+      sessionStorage.removeItem("authToken");
+      console.log('Token removido');
+      // Redirecionar para a página de login
+      window.location.replace("https://superproclube.com.br/index2.html");
+    });
+  </script>
 </body>
 </html>
