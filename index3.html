@@ -29,7 +29,7 @@
         
         if (!authToken) {
           debugLog('Token não encontrado - redirecionando para login');
-          window.location.replace('https://superproclube.com.br/index2.html');
+          window.location.replace('http://localhost:3001/index2.html');
           return;
         }
 
@@ -37,7 +37,7 @@
           // Verifica se o token é válido
           debugLog('Verificando token com a API...');
           debugLog('Token sendo enviado:', authToken);
-          const response = await fetch('https://superproclube.com.br/api/validateUser', {
+          const response = await fetch('https://api.superproclube.com.br/api/validateUser', {
             method: 'GET',
             credentials: 'include',
             headers: {
@@ -59,7 +59,7 @@
           if (!data.valid) {
             debugLog('Token inválido - redirecionando para login');
             sessionStorage.removeItem('authToken');
-            window.location.replace('https://superproclube.com.br/index2.html');
+            window.location.replace('http://localhost:3001/index2.html');
           } else {
             debugLog('Token válido - acesso permitido');
             debugLog('URL atual:', window.location.href);
@@ -68,7 +68,7 @@
         } catch (error) {
           debugLog('Erro na verificação:', error);
           sessionStorage.removeItem('authToken');
-          window.location.replace('https://superproclube.com.br/index2.html');
+          window.location.replace('http://localhost:3001/index2.html');
         }
       }
 
@@ -488,7 +488,7 @@
     <!-- JavaScript -->
     <script>
       // Utilizamos o servidor proxy para buscar as dicas
-      const BASE_URL = "https://superproclube.com.br";
+      const BASE_URL = "https://api.superproclube.com.br";
       
       // Função para obter a data atual no formato "YYYY-MM-DD"
       function getCurrentDate() {
