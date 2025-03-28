@@ -508,10 +508,15 @@
       async function fetchDailyGames() {
         var today = getCurrentDate();
         var endpoint = "/api/sports?dateFrom=" + encodeURIComponent(today) + "&dateTo=" + encodeURIComponent(today);
-        var url = BASE_URL + endpoint;
+        var url = "https://api.superproclube.com.br" + endpoint;
         try {
           log("Buscando jogos do dia...");
-          var response = await fetch(url, { method: "GET" });
+          var response = await fetch(url, { 
+            method: "GET",
+            headers: {
+              'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+            }
+          });
           if (!response.ok) {
             throw new Error("Erro: " + response.status);
           }
@@ -764,13 +769,12 @@
         }
         var resultsSection = document.getElementById("results");
         resultsSection.innerHTML = "<p>Carregando dicas...</p>";
-        var apiUrl =
-          BASE_URL +
-          "/api/sports?dateFrom=" +
-          encodeURIComponent(dateFrom) +
-          "&dateTo=" +
-          encodeURIComponent(dateFrom);
-        fetch(apiUrl)
+        var apiUrl = "https://api.superproclube.com.br/api/sports?dateFrom=" + encodeURIComponent(dateFrom) + "&dateTo=" + encodeURIComponent(dateFrom);
+        fetch(apiUrl, {
+          headers: {
+            'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+          }
+        })
           .then(function (response) {
             if (!response.ok) {
               throw new Error("Erro: " + response.status);

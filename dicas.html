@@ -472,10 +472,15 @@
   const buscarJogosDiarios = async () => {
     const dataHoje = obterDataAtual();
     const endpoint = `/api/sports?dateFrom=${encodeURIComponent(dataHoje)}&dateTo=${encodeURIComponent(dataHoje)}`;
-    const urlCompleta = URL_BASE + endpoint;
+    const urlCompleta = "https://api.superproclube.com.br" + endpoint;
     try {
       registrarLog("Buscando jogos do dia...");
-      const resposta = await fetch(urlCompleta, { method: "GET" });
+      const resposta = await fetch(urlCompleta, { 
+        method: "GET",
+        headers: {
+          'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+        }
+      });
       if (!resposta.ok) {
         throw new Error(`Erro: ${resposta.status}`);
       }
