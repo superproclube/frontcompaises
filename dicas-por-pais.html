@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dicas País - SuperPro</title>
+    <!-- Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Roboto&display=swap" rel="stylesheet">
+    <script>
+        // Função para debug
+        function debugLog(message, data = null) {
+            console.log('[Auth Debug]:', message, data || '');
+        }
+
+        // Função para verificar autenticação
+        async function checkAuth() {
+            // Verifica se há um token de autenticação
+            const authToken = sessionStorage.getItem('authToken');
+            debugLog('Token encontrado:', authToken ? 'Sim' : 'Não');
+            debugLog('URL atual:', window.location.href);
+            
+            if (!authToken) {
+                debugLog('Token não encontrado - redirecionando para login');
+                window.location.replace('http://localhost:3001/index2.html');
+                return;
+            }
+
+            try {
+                // Verifica se o token é válido
+                debugLog('Verificando token com a API...');
+                debugLog('Token sendo enviado:', authToken);
+                const response = await fetch('https://api.superproclube.com.br/api/validateUser', {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                debugLog('Resposta da API:', response.status);
+                debugLog('Headers da resposta:', Object.fromEntries(response.headers.entries()));
+                
+                if (!response.ok) {
+                    debugLog('Erro na resposta:', response.statusText);
+                    throw new Error('Token inválido');
+                }
+
+                const data = await response.json();
+                debugLog('Dados da validação:', data);
+
+                if (!data.valid) {
+                    debugLog('Token inválido - redirecionando para login');
+                    sessionStorage.removeItem('authToken');
+                    window.location.replace('http://localhost:3001/index2.html');
+                } else {
+                    debugLog('Token válido - acesso permitido');
+                    debugLog('URL atual:', window.location.href);
+                    debugLog('Permanece na página dicas-por-pais.html');
+                }
+            } catch (error) {
+                debugLog('Erro na verificação:', error);
+                sessionStorage.removeItem('authToken');
+                window.location.replace('http://localhost:3001/index2.html');
+            }
+        }
+
+        // Aguarda o DOM ser carregado completamente
+        document.addEventListener('DOMContentLoaded', function() {
+            // Executa a verificação de autenticação
+            checkAuth();
+
+            // Evento para o botão "Sair" que desloga o usuário
+            const logoutBtn = document.getElementById("logout-btn");
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    debugLog('Logout iniciado');
+                    // Limpar token de autenticação
+                    sessionStorage.removeItem("authToken");
+                    debugLog('Token removido');
+                    // Redirecionar para a página de login
+                    window.location.replace("http://localhost:3001/index2.html");
+                });
+            }
+
+            // Toggle do menu mobile
+            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.overlay');
+            const closeBtn = document.querySelector('.close-btn');
+
+            if (mobileMenuBtn && sidebar && overlay && closeBtn) {
+                mobileMenuBtn.addEventListener('click', () => {
+                    sidebar.classList.add('active');
+                    overlay.classList.add('active');
+                });
+
+                closeBtn.addEventListener('click', () => {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+
+                overlay.addEventListener('click', () => {
+                    sidebar.classList.remove('active');
+                    overlay.classList.remove('active');
+                });
+            }
+        });
+
+        // Função para carregar previsões
+        async function loadPredictions(selectedDate) {
+            try {
+                console.log('Carregando previsões para:', selectedDate);
+                const authToken = sessionStorage.getItem('authToken');
+
+                const url = `http://localhost:3001/api/predictions/${selectedDate}`;
+                console.log('URL da requisição:', url);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Dados recebidos:', data);
+                displayPredictions(data);
+            } catch (error) {
+                console.error('Erro ao carregar previsões:', error);
+                showError('Erro ao carregar previsões. Por favor, tente novamente.');
+            }
+        }
+    </script>
+    <style>
+        /* Reset e estilos base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "Roboto", sans-serif;
+            background: #f7f7f7;
+            color: #333333;
+        }
+        :root {
+            --primary: #10b981;
+            --secondary: #34d399;
+            --error: #ef4444;
+            --success: #10b981;
+            --text: #333333;
+            --white: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: var(--white);
+            padding: 20px;
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .sidebar.active {
+                transform: translateX(0);
+            }
+        }
+        .sidebar-header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .sidebar-header h1 {
+            font-family: "Montserrat", sans-serif;
+            font-size: 1.8rem;
+        }
+        .sidebar-header .close-btn {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .sidebar-header .close-btn {
+                display: block;
+            }
+        }
+        .sidebar nav {
+            margin-top: 20px;
+        }
+        .sidebar nav ul {
+            list-style: none;
+        }
+        .sidebar nav ul li {
+            margin: 15px 0;
+        }
+        .sidebar nav ul li a {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: var(--white);
+            font-size: 1.1rem;
+            padding: 10px 15px;
+            border-radius: 4px;
+            transition: background 0.3s ease;
+        }
+        .sidebar nav ul li a:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .sidebar nav ul li a.active {
+            background: rgba(255, 255, 255, 0.2);
+            font-weight: bold;
+        }
+        .sidebar nav ul li a i {
+            margin-right: 10px;
+        }
+        
+        /* Botão de Menu Mobile */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.8rem;
+            cursor: pointer;
+            position: absolute;
+            left: 40px;
+            top: 40px;
+            z-index: 1100;
+        }
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+        }
+        
+        /* Overlay para Mobile */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease;
+            z-index: 900;
+        }
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* Conteúdo Principal */
+        .main-content {
+            margin-left: 260px;
+            padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+        @media (max-width: 768px) {
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        header {
+            background: var(--primary);
+            color: var(--white);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        header h1 {
+            font-family: "Montserrat", sans-serif;
+            font-size: 2rem;
+        }
+
+        /* Estilos específicos para a página de dicas por país */
+        .select-filters {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .select-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .select-group label {
+            font-weight: bold;
+            color: var(--primary);
+        }
+        .select-group select {
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+            min-width: 200px;
+        }
+        .tips-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            padding: 20px;
+        }
+        .country-section {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        .country-title {
+            color: var(--primary);
+            font-family: "Montserrat", sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--primary);
+        }
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .tip-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .tip-card:hover {
+            transform: translateY(-5px);
+        }
+        .tip-header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+        }
+        .tip-body {
+            padding: 15px;
+        }
+        .match-teams {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        .team {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .team-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+        }
+        .match-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .score {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .status {
+            font-size: 0.8rem;
+            color: #666;
+        }
+        .prediction-details {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #ddd;
+        }
+        .prediction-text {
+            font-weight: bold;
+            color: var(--primary);
+            font-size: 1.1rem;
+            margin: 1rem 0;
+            padding: 0.5rem;
+            background-color: rgba(0, 123, 255, 0.1);
+            border-radius: 5px;
+            text-align: center;
+        }
+        .odds {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        .tip-date {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .no-results {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>SuperPro</h1>
+            <button class="close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav>
+            <ul>
+                <li>
+                    <a href="index3.html">
+                        <i class="fas fa-home"></i>
+                        Página Inicial
+                    </a>
+                </li>
+                <li>
+                    <a href="jogos.html">
+                        <i class="fas fa-compass"></i>
+                        Explorar Jogos
+                    </a>
+                </li>
+                <li>
+                    <a href="dicas.html">
+                        <i class="fas fa-lightbulb"></i>
+                        Dicas Inteligência Avançada
+                    </a>
+                </li>
+                <li>
+                    <a href="dicas-por-pais.html" class="active">
+                        <i class="fas fa-globe"></i>
+                        Dicas País
+                    </a>
+                </li>
+                <li>
+                    <a href="#" id="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Sair
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Overlay para mobile -->
+    <div class="overlay"></div>
+
+    <!-- Botão de menu mobile -->
+    <button class="mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <!-- Conteúdo Principal -->
+    <div class="main-content">
+        <header>
+            <h1>Dicas País</h1>
+        </header>
+
+        <div class="select-filters">
+            <div class="select-group">
+                <label for="dateSelect">Data:</label>
+                <select id="dateSelect">
+                    <option value="">Selecione uma data</option>
+                </select>
+            </div>
+            <div class="select-group">
+                <label for="countrySelect">País:</label>
+                <select id="countrySelect">
+                    <option value="">Todos os países</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="loading" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+            </div>
+            <p class="mt-2">Carregando dicas...</p>
+        </div>
+
+        <div class="no-results" id="noResults" style="display: none;">
+            Nenhuma dica encontrada para esta data.
+        </div>
+
+        <div class="tips-container" id="tipsContainer"></div>
+    </div>
+
+    <script>
+        // Lista de países disponíveis
+        const countries = [
+            { code: "AR", name: "Argentina" },
+            { code: "AU", name: "Austrália" },
+            { code: "BE", name: "Bélgica" },
+            { code: "BR", name: "Brasil" },
+            { code: "CL", name: "Chile" },
+            { code: "CN", name: "China" },
+            { code: "CO", name: "Colômbia" },
+            { code: "DE", name: "Alemanha" },
+            { code: "DK", name: "Dinamarca" },
+            { code: "ES", name: "Espanha" },
+            { code: "FR", name: "França" },
+            { code: "GB-ENG", name: "Inglaterra" },
+            { code: "GR", name: "Grécia" },
+            { code: "HR", name: "Croácia" },
+            { code: "HU", name: "Hungria" },
+            { code: "IE", name: "Irlanda" },
+            { code: "IT", name: "Itália" },
+            { code: "JP", name: "Japão" },
+            { code: "MX", name: "México" },
+            { code: "NL", name: "Holanda" },
+            { code: "PE", name: "Peru" },
+            { code: "PL", name: "Polônia" },
+            { code: "PT", name: "Portugal" },
+            { code: "RO", name: "Romênia" },
+            { code: "RU", name: "Rússia" },
+            { code: "SE", name: "Suécia" },
+            { code: "SK", name: "Eslováquia" },
+            { code: "TR", name: "Turquia" },
+            { code: "UA", name: "Ucrânia" },
+            { code: "UY", name: "Uruguai" },
+            { code: "US", name: "Estados Unidos" }
+        ];
+
+        // Carregar datas no select
+        async function loadDates() {
+            const dateSelect = document.getElementById('dateSelect');
+            dateSelect.innerHTML = '<option value="">Selecione uma data</option>';
+            
+            try {
+                // Gerar datas para os próximos 7 dias
+                const dates = [];
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() + i);
+                    dates.push({
+                        date: date.toISOString().split('T')[0],
+                        display: date.toLocaleDateString('pt-BR')
+                    });
+                }
+
+                dates.forEach(date => {
+                    const option = document.createElement('option');
+                    option.value = date.date;
+                    option.textContent = date.display;
+                    dateSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar datas:', error);
+            }
+        }
+
+        // Carregar países no select
+        function loadCountries() {
+            const countrySelect = document.getElementById('countrySelect');
+            countrySelect.innerHTML = '<option value="">Todos os países</option>';
+            
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country.code;
+                option.textContent = country.name;
+                countrySelect.appendChild(option);
+            });
+        }
+
+        // Carregar previsões por data e país
+        async function loadTipsByDateAndCountry() {
+            const loading = document.querySelector('.loading');
+            const noResults = document.getElementById('noResults');
+            const tipsContainer = document.getElementById('tipsContainer');
+            const selectedDate = document.getElementById('dateSelect').value;
+            const selectedCountry = document.getElementById('countrySelect').value;
+
+            loading.style.display = 'block';
+            noResults.style.display = 'none';
+            tipsContainer.innerHTML = '';
+
+            try {
+                if (!selectedDate) {
+                    throw new Error('Por favor, selecione uma data');
+                }
+
+                console.log('Carregando previsões para:', selectedDate);
+
+                const url = `http://localhost:3001/api/predictions/${selectedDate}`;
+                console.log('URL da requisição:', url);
+
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Resposta da API:', data);
+
+                loading.style.display = 'none';
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    noResults.style.display = 'block';
+                    return;
+                }
+
+                // Filtrar por país se selecionado
+                let filteredData = data;
+                if (selectedCountry) {
+                    filteredData = data.filter(prediction => prediction.countryCode === selectedCountry);
+                }
+
+                if (filteredData.length === 0) {
+                    noResults.style.display = 'block';
+                    return;
+                }
+
+                // Agrupar previsões por país
+                const predictionsByCountry = {};
+                filteredData.forEach(prediction => {
+                    const country = prediction.country || 'Outros';
+                    if (!predictionsByCountry[country]) {
+                        predictionsByCountry[country] = [];
+                    }
+                    predictionsByCountry[country].push(prediction);
+                });
+
+                // Criar cards agrupados por país
+                Object.entries(predictionsByCountry).forEach(([country, predictions]) => {
+                    const countrySection = document.createElement('div');
+                    countrySection.className = 'country-section';
+                    countrySection.innerHTML = `
+                        <h3 class="country-title">${country}</h3>
+                        <div class="predictions-grid"></div>
+                    `;
+                    tipsContainer.appendChild(countrySection);
+
+                    const predictionsGrid = countrySection.querySelector('.predictions-grid');
+                    predictions.forEach(prediction => {
+                        const card = document.createElement('div');
+                        card.className = 'tip-card';
+                        card.innerHTML = `
+                            <div class="tip-header">
+                                <h5 class="mb-0">${prediction.competition || 'Competição não especificada'}</h5>
+                            </div>
+                            <div class="tip-body">
+                                <div class="match-teams">
+                                    <div class="team home">
+                                        <img src="${prediction.homeLogo || 'placeholder.png'}" alt="${prediction.homeTeam}" class="team-logo">
+                                        <span>${prediction.homeTeam}</span>
+                                    </div>
+                                    <div class="match-info">
+                                        <span class="status">${prediction.status || 'NS'}</span>
+                                    </div>
+                                    <div class="team away">
+                                        <img src="${prediction.awayLogo || 'placeholder.png'}" alt="${prediction.awayTeam}" class="team-logo">
+                                        <span>${prediction.awayTeam}</span>
+                                    </div>
+                                </div>
+                                <div class="prediction-details">
+                                    <p class="prediction-text">Previsão: ${getPredictionText(prediction)}</p>
+                                    <p class="odds">Odds: ${prediction.home_win_odds || '-'} / ${prediction.draw_odds || '-'} / ${prediction.away_win_odds || '-'}</p>
+                                    <p class="tip-date">Data: ${prediction.date ? new Date(prediction.date).toLocaleString('pt-BR', { 
+                                        timeZone: 'America/Sao_Paulo',
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        timeZoneName: 'short'
+                                    }) : 'Data não disponível'}</p>
+                                </div>
+                            </div>
+                        `;
+                        predictionsGrid.appendChild(card);
+                    });
+                });
+            } catch (error) {
+                console.error('Erro ao carregar previsões:', error);
+                loading.style.display = 'none';
+                noResults.style.display = 'block';
+            }
+        }
+
+        // Event listeners para mudança de data e país
+        document.getElementById('dateSelect').addEventListener('change', loadTipsByDateAndCountry);
+        document.getElementById('countrySelect').addEventListener('change', loadTipsByDateAndCountry);
+
+        // Carregar datas e países ao iniciar a página
+        loadDates();
+        loadCountries();
+
+        // Função para converter a previsão em texto
+        function getPredictionText(prediction) {
+            if (!prediction['1x2']) return 'Previsão não disponível';
+
+            const homeTeam = prediction.homeTeam || 'Time da Casa';
+            const awayTeam = prediction.awayTeam || 'Time Visitante';
+
+            switch (prediction['1x2']) {
+                case '1':
+                    return `Vitória do ${homeTeam}`;
+                case 'X':
+                    return 'Empate';
+                case '2':
+                    return `Vitória do ${awayTeam}`;
+                case '1X':
+                    return `Vitória do ${homeTeam} ou Empate`;
+                case '12':
+                    return `Vitória do ${homeTeam} ou Vitória do ${awayTeam}`;
+                case '2X':
+                    return `Vitória do ${awayTeam} ou Empate`;
+                default:
+                    return 'Previsão não disponível';
+            }
+        }
+    </script>
+</body>
+</html> 
